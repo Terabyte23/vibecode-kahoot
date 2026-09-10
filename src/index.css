@@ -1,0 +1,319 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap');
+
+:root {
+  --bg-purple: #46178f;
+  --red: #e21b3c;
+  --blue: #1368ce;
+  --yellow: #d89e00;
+  --green: #26890c;
+  --dark: #333333;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Montserrat', sans-serif;
+}
+
+body {
+  background-color: var(--bg-purple);
+  color: #333;
+}
+
+.kahoot-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.kahoot-page.center-content {
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.kahoot-page.scrollable {
+  padding: 40px 20px;
+  align-items: center;
+}
+
+.brand-logo {
+  color: white;
+  font-size: 3.5rem;
+  font-weight: 900;
+  margin-bottom: 20px;
+  text-shadow: 2px 4px 0 rgba(0,0,0,0.2);
+}
+
+/* Карточки */
+.main-card, .editor-card {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 500px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.editor-card {
+  max-width: 700px;
+}
+
+.input-field {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.input-field.small {
+  text-align: left;
+  padding: 8px;
+}
+
+/* Кнопки */
+.btn-kahoot {
+  border: none;
+  padding: 12px 20px;
+  border-radius: 6px;
+  font-weight: 800;
+  font-size: 1rem;
+  cursor: pointer;
+  color: white;
+  background: var(--dark);
+}
+
+.btn-kahoot.green { background: var(--green); }
+.btn-kahoot.blue { background: var(--blue); }
+.btn-kahoot.purple { background: var(--bg-purple); }
+.btn-kahoot.red { background: var(--red); }
+.btn-kahoot.dark { background: var(--dark); }
+
+.btn-group {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+/* Список игр */
+.quiz-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.quiz-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8f9fa;
+  padding: 10px;
+  border-radius: 6px;
+}
+
+/* Лобби ХОСТА */
+.top-bar {
+  background: white;
+  padding: 15px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pin-badge {
+  background: var(--bg-purple);
+  color: white;
+  padding: 5px 15px;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.pin-badge h1 { font-size: 1.8rem; }
+
+.lobby-body {
+  display: flex;
+  gap: 30px;
+  padding: 40px;
+  justify-content: center;
+}
+
+.qr-card {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  font-weight: 800;
+}
+
+.players-card {
+  background: rgba(255,255,255,0.1);
+  color: white;
+  padding: 20px;
+  border-radius: 12px;
+  min-width: 300px;
+}
+
+.chips-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.player-chip {
+  background: white;
+  color: #333;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-weight: 800;
+}
+
+/* Вопросы Хоста */
+.game-body {
+  padding: 40px;
+  color: white;
+  display: flex;
+  justify-content: center;
+}
+
+.question-view {
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.q-title {
+  text-align: center;
+  font-size: 2.2rem;
+}
+
+.host-options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.host-opt-card {
+  padding: 20px;
+  border-radius: 8px;
+  font-size: 1.4rem;
+  font-weight: 800;
+}
+
+/* Цветные темы для ответов */
+.opt-0 { background: var(--red); color: white; }
+.opt-1 { background: var(--blue); color: white; }
+.opt-2 { background: var(--yellow); color: white; }
+.opt-3 { background: var(--green); color: white; }
+
+/* Экран игрока (Кнопки ответов) */
+.player-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 15px;
+  width: 100%;
+  max-width: 500px;
+  height: 70vh;
+}
+
+.btn-answer {
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.shape-icon {
+  font-size: 4rem;
+  color: white;
+}
+
+/* Диаграммы результатов */
+.bars-container {
+  display: flex;
+  align-items: flex-end;
+  gap: 20px;
+  height: 250px;
+  margin-top: 30px;
+}
+
+.bar-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 50px;
+}
+
+.bar {
+  width: 100%;
+  border-radius: 6px 6px 0 0;
+  transition: height 0.3s;
+}
+
+.leaderboard-box {
+  background: white;
+  color: #333;
+  padding: 20px;
+  border-radius: 8px;
+  min-width: 300px;
+  margin-top: 20px;
+}
+
+.lb-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.q-editor-box {
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 6px;
+  margin-top: 10px;
+}
+
+.opts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.opt-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.timer-badge {
+  background: var(--bg-purple);
+  color: white;
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  font-weight: 900;
+}
+
+.status-card {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  text-align: center;
+}
