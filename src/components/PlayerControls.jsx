@@ -9,15 +9,19 @@ const BUTTONS = [
 ];
 
 export function PlayerControls({ currentQuestion, onSendAnswer, playerAnswer }) {
-  const [startTime] = useState(Date.now());
+  const [startTime, setStartTime] = useState(Date.now());
+
+  // Reset local start time when the question changes
+  useEffect(() => {
+    setStartTime(Date.now());
+  }, [currentQuestion?.id]);
 
   const handleAnswerSelect = (optionIndex) => {
-    if (playerAnswer) return; // Запрет повторного ответа
+    if (playerAnswer) return;
 
     const elapsed = (Date.now() - startTime) / 1000;
     const isCorrect = optionIndex === currentQuestion.correctIndex;
     
-    // Формула рассчёта очков из ТЗ
     let points = 0;
     if (isCorrect) {
       const calc = 1000 * (1 - elapsed / currentQuestion.timeLimit / 2);
