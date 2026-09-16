@@ -26,7 +26,7 @@ export default function App() {
   return <HomeRoute navigate={navigate} />;
 }
 
-// ------------------- 1. ГЛАВНАЯ СТРАНИЦА (/) -------------------
+// ------------------- 1. MAIN PAGE (/) -------------------
 function HomeRoute({ navigate }) {
   return (
     <div className="kahoot-page center-content">
@@ -43,7 +43,7 @@ function HomeRoute({ navigate }) {
   );
 }
 
-// ------------------- 2. ВЬЮ УЧИТЕЛЯ (/host) -------------------
+// ------------------- 2. HOST VIEW (/host) -------------------
 function HostRoute({ navigate }) {
   const [user, setUser] = useState(pb.authStore.model);
   const [nickname, setNickname] = useState('');
@@ -90,19 +90,22 @@ function HostRoute({ navigate }) {
     return () => { pb.collection('players').unsubscribe('*'); };
   }, [activeGame, view]);
 
+  // Updated answer filter strictly scoped to the active question
   useEffect(() => {
-    if (!activeGame || view !== 'game') return;
+    if (!activeGame || view !== 'game' || !activeGame.currentQuestion) return;
 
-    pb.collection('answers').getFullList({ filter: `game="${activeGame.id}"` }).then(setAnswers);
+    pb.collection('answers')
+      .getFullList({ filter: `game="${activeGame.id}" && question="${activeGame.currentQuestion}"` })
+      .then(setAnswers);
 
-    pb.collection('answers').subscribe('*', (e) => {
-      if (e.record.game === activeGame.id) {
+    const unsubscribe = pb.collection('answers').subscribe('*', (e) => {
+      if (e.record.game === activeGame.id && e.record.question === activeGame.currentQuestion) {
         setAnswers(prev => [...prev.filter(a => a.id !== e.record.id), e.record]);
       }
     });
 
     return () => { pb.collection('answers').unsubscribe('*'); };
-  }, [activeGame, view]);
+  }, [activeGame?.id, activeGame?.currentQuestion, view]);
 
   const handleHostLogin = async (e) => {
     e.preventDefault();
@@ -221,7 +224,7 @@ function HostRoute({ navigate }) {
         }
       }
 
-      // 1. Reset answers locally immediately when moving to a new question
+      // Explicitly clear answers when starting a new question
       if (updateData.status === 'question') {
         setAnswers([]);
       }
@@ -451,13 +454,14 @@ function HostRoute({ navigate }) {
   );
 }
 
-// ------------------- 3. ВЬЮ ИГРОКА (/play) -------------------
+// ------------------- 3. PLAYER VIEW (/play) -------------------
 function PlayRoute({ navigate }) {
   const [code, setCode] = useState('');
   const [nickname, setNickname] = useState('');
   const [game, setGame] = useState(null);
   const [player, setPlayer] = useState(null);
   const [hasAnswered, setHasAnswered] = useState(false);
+  const [currentQuestionData, setCurrentQuestionData] = useState(null);
 
   useEffect(() => {
     const savedPlayerId = localStorage.getItem('kahoot_player_id');
@@ -472,6 +476,17 @@ function PlayRoute({ navigate }) {
     if (params.get('code')) setCode(params.get('code'));
   }, []);
 
+  // Fetch active question text for the player
+  useEffect(() => {
+    if (!game?.currentQuestion) return;
+    
+    pb.collection('questions')
+      .getOne(game.currentQuestion)
+      .then(setCurrentQuestionData)
+      .catch(console.error);
+  }, [game?.currentQuestion]);
+
+  // Realtime game update listener
   useEffect(() => {
     if (!game?.id) return;
 
@@ -565,12 +580,17 @@ function PlayRoute({ navigate }) {
             <p>Oota tulemusi...</p>
           </div>
         ) : (
-          <div className="player-grid">
-            {['▲', '◆', '●', '■'].map((shape, idx) => (
-              <button key={idx} type="button" className={`btn-answer opt-${idx}`} onClick={() => handleSendAnswer(idx)}>
-                <span className="shape-icon">{shape}</span>
-              </button>
-            ))}
+          <div className="player-question-container" style={{ width: '100%', maxWidth: '500px' }}>
+            <h2 className="q-title" style={{ color: 'white', marginBottom: '20px', textAlign: 'center' }}>
+              {currentQuestionData?.text || 'Laen küsimust...'}
+            </h2>
+            <div className="player-grid">
+              {['▲', '◆', '●', '■'].map((shape, idx) => (
+                <button key={idx} type="button" className={`btn-answer opt-${idx}`} onClick={() => handleSendAnswer(idx)}>
+                  <span className="shape-icon">{shape}</span>
+                </button>
+              ))}
+            </div>
           </div>
         )
       )}
