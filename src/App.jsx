@@ -469,17 +469,26 @@ function PlayRoute({ navigate }) {
   }, []);
 
   useEffect(() => {
-    if (!game) return;
+    if (!game?.id) return;
+
+    pb.collection('games').unsubscribe(game.id);
 
     pb.collection('games').subscribe(game.id, (e) => {
       if (e.action === 'update') {
-        setGame(e.record);
-        if (e.record.status === 'question') setHasAnswered(false);
+        setGame(prevGame => {
+          if (
+            e.record.currentQuestion !== prevGame?.currentQuestion ||
+            (e.record.status === 'question' && prevGame?.status !== 'question')
+          ) {
+            setHasAnswered(false);
+          }
+          return e.record;
+        });
       }
     });
 
     return () => { pb.collection('games').unsubscribe(game.id); };
-  }, [game]);
+  }, [game?.id]);
 
   const handleJoin = async (e) => {
     e.preventDefault();
