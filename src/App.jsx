@@ -221,11 +221,15 @@ function HostRoute({ navigate }) {
         }
       }
 
+      // 1. Reset answers locally immediately when moving to a new question
+      if (updateData.status === 'question') {
+        setAnswers([]);
+      }
+
       const updated = await pb.collection('games').update(activeGame.id, updateData);
       setActiveGame(updated);
 
       if (updateData.status === 'question') {
-        setAnswers([]);
         setView('game');
       }
     } catch (err) {
