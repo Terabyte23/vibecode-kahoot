@@ -402,7 +402,7 @@ function HostRoute({ navigate }) {
                   return (
                     <div key={idx} className="bar-wrapper">
                       <span>{count}</span>
-                      <div className={`bar opt-${idx}`} style={{ height: `${Math.max(count * 30, 15)}px` }} />
+                      <div className={`bar opt-${idx} ${idx === currentQ?.correctIndex ? 'correct' : ''}`} style={{ height: `${Math.max(count * 30, 15)}px` }} />
                     </div>
                   );
                 })}
@@ -459,6 +459,7 @@ function PlayRoute({ navigate }) {
   const [game, setGame] = useState(null);
   const [player, setPlayer] = useState(null);
   const [hasAnswered, setHasAnswered] = useState(false);
+  const [selectedOption, setSelectedOption] = useState(null);
   const [currentQuestionData, setCurrentQuestionData] = useState(null);
 
   useEffect(() => {
@@ -496,6 +497,7 @@ function PlayRoute({ navigate }) {
             (e.record.status === 'question' && prevGame?.status !== 'question')
           ) {
             setHasAnswered(false);
+            setSelectedOption(null);
           }
           return e.record;
         });
@@ -538,6 +540,7 @@ function PlayRoute({ navigate }) {
         question: game.currentQuestion,
         optionIndex
       });
+      setSelectedOption(optionIndex);
       setHasAnswered(true);
     } catch (e) { 
       alert('Vastuse saatmine ebaõnnestus (aeg sai läbi või küsimus on muutunud): ' + e.message); 
@@ -559,6 +562,8 @@ function PlayRoute({ navigate }) {
       </div>
     );
   }
+
+  const isCorrectAnswer = selectedOption !== null && currentQuestionData?.correctIndex === selectedOption;
 
   return (
     <div className="kahoot-page">
@@ -611,11 +616,57 @@ function PlayRoute({ navigate }) {
         )
       )}
 
-      {(game.status === 'results' || game.status === 'finished') && (
+      {game.status === 'results' && (
+        <div className="kahoot-page">
+          <header className="top-bar">
+            <h2>Tulemused - {player.nickname}</h2>
+          </header>
+          <main className="game-body">
+            <div className="question-view">
+              <div className="status-card" style={{ marginBottom: '20px', background: isCorrectAnswer ? '#26890c' : '#e21b3c', color: 'white' }}>
+                {selectedOption === null ? (
+                  <h2>Aeg sai läbi! ⏱️</h2>
+                ) : isCorrectAnswer ? (
+                  <h2>Õige! 🎉</h2>
+                ) : (
+                  <h2>Vale! ❌</h2>
+                )}
+                <p>Õige vastus on märgitud rohelise linnukesega (✔️)</p>
+              </div>
+
+              <h1 className="q-title">{currentQuestionData?.text}</h1>
+              <div className="host-options-grid">
+                {currentQuestionData?.options?.map((opt, i) => {
+                  const isRight = i === currentQuestionData.correctIndex;
+                  const isPlayerChoice = i === selectedOption;
+                  return (
+                    <div
+                      key={i}
+                      className={`host-opt-card opt-${i}`}
+                      style={{
+                        border: isRight ? '4px solid #26890c' : 'none',
+                        boxShadow: isRight ? '0 0 12px rgba(38, 137, 12, 0.8)' : 'none',
+                        opacity: isRight || isPlayerChoice ? 1 : 0.5,
+                        position: 'relative'
+                      }}
+                    >
+                      <span className="shape">{['▲', '◆', '●', '■'][i]}</span> {opt}
+                      {isRight && <span style={{ marginLeft: 'auto', fontSize: '1.4rem' }}>✔️</span>}
+                      {isPlayerChoice && !isRight && <span style={{ marginLeft: 'auto', fontSize: '1.4rem' }}>❌</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </main>
+        </div>
+      )}
+
+      {game.status === 'finished' && (
         <div className="kahoot-page center-content">
           <div className="status-card">
-            <h2>Aeg läbi!</h2>
-            <p>Vaata tulemusi suurelt ekraanilt.</p>
+            <h2>Mäng on lõppenud! 🎉</h2>
+            <p>Vaata lõplikku edetabelit suurelt ekraanilt.</p>
           </div>
         </div>
       )}
