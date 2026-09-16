@@ -476,7 +476,7 @@ function PlayRoute({ navigate }) {
     if (params.get('code')) setCode(params.get('code'));
   }, []);
 
-  // Fetch active question text for the player
+  // Fetch active question text and options for the player
   useEffect(() => {
     if (!game?.currentQuestion) return;
     
@@ -581,13 +581,25 @@ function PlayRoute({ navigate }) {
           </div>
         ) : (
           <div className="player-question-container" style={{ width: '100%', maxWidth: '500px' }}>
+            {/* Question Heading */}
             <h2 className="q-title" style={{ color: 'white', marginBottom: '20px', textAlign: 'center' }}>
               {currentQuestionData?.text || 'Laen küsimust...'}
             </h2>
+
+            {/* Answer Options Grid with Shapes and Text */}
             <div className="player-grid">
               {['▲', '◆', '●', '■'].map((shape, idx) => (
-                <button key={idx} type="button" className={`btn-answer opt-${idx}`} onClick={() => handleSendAnswer(idx)}>
+                <button 
+                  key={idx} 
+                  type="button" 
+                  className={`btn-answer opt-${idx}`} 
+                  onClick={() => handleSendAnswer(idx)}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
+                >
                   <span className="shape-icon">{shape}</span>
+                  <span className="option-text">
+                    {currentQuestionData?.options?.[idx] || ''}
+                  </span>
                 </button>
               ))}
             </div>
