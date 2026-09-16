@@ -561,81 +561,62 @@ function PlayRoute({ navigate }) {
   }
 
   return (
-    <div className="kahoot-page center-content">
+    <div className="kahoot-page">
       {game.status === 'lobby' && (
-        <div className="status-card">
-          <h2>Oled mängus, {player.nickname}! 👋</h2>
-          <p>Oota, kuni õpetaja alustab mängu...</p>
+        <div className="kahoot-page center-content">
+          <div className="status-card">
+            <h2>Oled mängus, {player.nickname}! 👋</h2>
+            <p>Oota, kuni õpetaja alustab mängu...</p>
+          </div>
         </div>
       )}
 
       {game.status === 'question' && (
         hasAnswered ? (
-          <div className="status-card">
-            <h2>Vastus edastatud! 👍</h2>
-            <p>Oota tulemusi...</p>
+          <div className="kahoot-page center-content">
+            <div className="status-card">
+              <h2>Vastus edastatud! 👍</h2>
+              <p>Oota tulemusi...</p>
+            </div>
           </div>
         ) : (
-          <div className="player-question-container" style={{ width: '90%', maxWidth: '600px', margin: '0 auto' }}>
-            <h2 className="q-title" style={{ color: 'white', marginBottom: '20px', textAlign: 'center', fontSize: '1.5rem', wordBreak: 'break-word' }}>
-              {currentQuestionData?.text || 'Laen küsimust...'}
-            </h2>
-            <div className="player-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', minHeight: '220px' }}>
-              {['▲', '◆', '●', '■'].map((shape, idx) => {
-                const text = currentQuestionData?.options?.[idx] || '';
-                return (
-                  <button 
-                    key={idx} 
-                    type="button" 
-                    className={`btn-answer opt-${idx}`} 
-                    onClick={() => handleSendAnswer(idx)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justify: 'flex-start',
-                      padding: '12px 16px',
-                      borderRadius: '8px',
-                      border: 'none',
-                      cursor: 'pointer',
-                      minHeight: '90px',
-                      width: '100%',
-                      boxSizing: 'border-box',
-                      overflow: 'hidden'
-                    }}
-                  >
-                    <span className="shape-icon" style={{ fontSize: '1.4rem', flexShrink: 0, marginRight: '10px' }}>
-                      {shape}
-                    </span>
-                    <span 
-                      className="option-text" 
-                      style={{ 
-                        color: 'white',
-                        fontWeight: 'bold',
+          <div className="kahoot-page">
+            <header className="top-bar">
+              <h2>Mängija: {player.nickname}</h2>
+            </header>
+            <main className="game-body">
+              <div className="question-view">
+                <h1 className="q-title">{currentQuestionData?.text || 'Laen küsimust...'}</h1>
+                <div className="host-options-grid">
+                  {currentQuestionData?.options?.map((opt, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      className={`host-opt-card opt-${i}`}
+                      onClick={() => handleSendAnswer(i)}
+                      style={{
+                        border: 'none',
+                        cursor: 'pointer',
                         textAlign: 'left',
-                        fontSize: text.length > 30 ? '0.85rem' : text.length > 15 ? '1rem' : '1.15rem',
-                        lineHeight: '1.2',
-                        wordBreak: 'break-word',
-                        overflowWrap: 'break-word',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 3,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden'
+                        font: 'inherit'
                       }}
                     >
-                      {text}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+                      <span className="shape">{['▲', '◆', '●', '■'][i]}</span> {opt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </main>
           </div>
         )
       )}
 
       {(game.status === 'results' || game.status === 'finished') && (
-        <div className="status-card">
-          <h2>Aeg läbi!</h2>
-          <p>Vaata tulemusi suurelt ekraanilt.</p>
+        <div className="kahoot-page center-content">
+          <div className="status-card">
+            <h2>Aeg läbi!</h2>
+            <p>Vaata tulemusi suurelt ekraanilt.</p>
+          </div>
         </div>
       )}
     </div>
