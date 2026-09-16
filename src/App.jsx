@@ -76,20 +76,25 @@ function HostRoute({ navigate }) {
     }
   }, [user]);
 
+  // Realtime subscription for registered players (with score updates)
   useEffect(() => {
-    if (!activeGame || view !== 'lobby') return;
+    if (!activeGame || (view !== 'lobby' && view !== 'game')) return;
     
-    pb.collection('players').getFullList({ filter: `game="${activeGame.id}"` }).then(setPlayers);
+    pb.collection('players').getFullList({ filter: `game="${activeGame.id}"`, sort: '-score' }).then(setPlayers);
 
-    pb.collection('players').subscribe('*', (e) => {
+    const unsubscribe = pb.collection('players').subscribe('*', (e) => {
       if (e.record.game === activeGame.id) {
-        setPlayers(prev => [...prev.filter(p => p.id !== e.record.id), e.record]);
+        setPlayers(prev => {
+          const updated = [...prev.filter(p => p.id !== e.record.id), e.record];
+          return updated.sort((a, b) => (b.score || 0) - (a.score || 0));
+        });
       }
     });
 
     return () => { pb.collection('players').unsubscribe('*'); };
-  }, [activeGame, view]);
+  }, [activeGame?.id, view]);
 
+  // Realtime subscription for submitted answers
   useEffect(() => {
     if (!activeGame || view !== 'game' || !activeGame.currentQuestion) return;
 
@@ -371,6 +376,8 @@ function HostRoute({ navigate }) {
 
   if (view === 'game' && activeGame) {
     const currentQ = gameQuestions.find(q => q.id === activeGame.currentQuestion);
+    const sortedLeaderboard = [...players].sort((a, b) => (b.score || 0) - (a.score || 0));
+
     return (
       <div className="kahoot-page">
         <header className="top-bar">
@@ -394,24 +401,47 @@ function HostRoute({ navigate }) {
             </div>
           )}
           {activeGame.status === 'results' && (
-            <div className="results-view">
-              <h1>Vastuste jaotus</h1>
-              <div className="bars-container">
-                {[0, 1, 2, 3].map(idx => {
-                  const count = answers.filter(a => a.optionIndex === idx).length;
-                  return (
-                    <div key={idx} className="bar-wrapper">
-                      <span>{count}</span>
-                      <div className={`bar opt-${idx} ${idx === currentQ?.correctIndex ? 'correct' : ''}`} style={{ height: `${Math.max(count * 30, 15)}px` }} />
+            <div className="results-view" style={{ display: 'flex', gap: '30px', justifyContent: 'center', width: '90%' }}>
+              <div style={{ flex: 1 }}>
+                <h1>Vastuste jaotus</h1>
+                <div className="bars-container">
+                  {[0, 1, 2, 3].map(idx => {
+                    const count = answers.filter(a => a.optionIndex === idx).length;
+                    return (
+                      <div key={idx} className="bar-wrapper">
+                        <span>{count}</span>
+                        <div className={`bar opt-${idx} ${idx === currentQ?.correctIndex ? 'correct' : ''}`} style={{ height: `${Math.max(count * 30, 15)}px` }} />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Live Scoreboard */}
+              <div style={{ flex: 1, background: 'rgba(255,255,255,0.1)', padding: '20px', borderRadius: '12px', color: 'white' }}>
+                <h2>Edetabel 🏆</h2>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '15px' }}>
+                  {sortedLeaderboard.slice(0, 5).map((p, idx) => (
+                    <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 15px', background: 'rgba(255,255,255,0.2)', borderRadius: '6px' }}>
+                      <span><strong>{idx + 1}.</strong> {p.nickname}</span>
+                      <strong>{p.score || 0} p</strong>
                     </div>
-                  );
-                })}
+                  ))}
+                </div>
               </div>
             </div>
           )}
           {activeGame.status === 'finished' && (
-            <div className="leaderboard-view">
-              <h1>Lõpp-edetabel</h1>
+            <div className="leaderboard-view" style={{ textAlign: 'center', color: 'white' }}>
+              <h1 style={{ fontSize: '3rem', marginBottom: '20px' }}>🎉 Lõpp-edetabel 🎉</h1>
+              <div style={{ maxWidth: '500px', margin: '0 auto 20px auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {sortedLeaderboard.slice(0, 5).map((p, idx) => (
+                  <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '15px 20px', background: idx === 0 ? '#ffb800' : 'rgba(255,255,255,0.2)', color: idx === 0 ? 'black' : 'white', borderRadius: '8px', fontSize: '1.2rem' }}>
+                    <span><strong>#{idx + 1}</strong> {p.nickname}</span>
+                    <strong>{p.score || 0} p</strong>
+                  </div>
+                ))}
+              </div>
               <button className="btn-kahoot dark" onClick={() => setView('quizzes')}>Tagasi menüüsse</button>
             </div>
           )}
@@ -460,7 +490,9 @@ function PlayRoute({ navigate }) {
   const [player, setPlayer] = useState(null);
   const [hasAnswered, setHasAnswered] = useState(false);
   const [selectedOption, setSelectedOption] = useState(null);
+  const [earnedPoints, setEarnedPoints] = useState(0);
   const [currentQuestionData, setCurrentQuestionData] = useState(null);
+  const [allPlayers, setAllPlayers] = useState([]);
 
   useEffect(() => {
     const savedPlayerId = localStorage.getItem('kahoot_player_id');
@@ -498,6 +530,7 @@ function PlayRoute({ navigate }) {
           ) {
             setHasAnswered(false);
             setSelectedOption(null);
+            setEarnedPoints(0);
           }
           return e.record;
         });
@@ -506,6 +539,13 @@ function PlayRoute({ navigate }) {
 
     return () => { pb.collection('games').unsubscribe(game.id); };
   }, [game?.id]);
+
+  // Load all game players to calculate local rankings
+  useEffect(() => {
+    if (!game?.id || (game.status !== 'results' && game.status !== 'finished')) return;
+
+    pb.collection('players').getFullList({ filter: `game="${game.id}"`, sort: '-score' }).then(setAllPlayers);
+  }, [game?.id, game?.status]);
 
   const handleJoin = async (e) => {
     e.preventDefault();
@@ -534,12 +574,30 @@ function PlayRoute({ navigate }) {
     if (hasAnswered || !game || !game.currentQuestion || !player) return;
 
     try {
+      const isCorrect = optionIndex === currentQuestionData?.correctIndex;
+      let points = 0;
+
+      if (isCorrect && game.questionStartedAt) {
+        const elapsed = (Date.now() - new Date(game.questionStartedAt).getTime()) / 1000;
+        const timeLimit = 30; // standard 30s limit
+        const calc = 1000 * (1 - elapsed / timeLimit / 2);
+        points = Math.max(500, Math.round(calc));
+      }
+
       await pb.collection('answers').create({
         game: game.id,
         player: player.id,
         question: game.currentQuestion,
         optionIndex
       });
+
+      if (points > 0) {
+        const updatedScore = (player.score || 0) + points;
+        const updatedPlayer = await pb.collection('players').update(player.id, { score: updatedScore });
+        setPlayer(updatedPlayer);
+      }
+
+      setEarnedPoints(points);
       setSelectedOption(optionIndex);
       setHasAnswered(true);
     } catch (e) { 
@@ -564,6 +622,7 @@ function PlayRoute({ navigate }) {
   }
 
   const isCorrectAnswer = selectedOption !== null && currentQuestionData?.correctIndex === selectedOption;
+  const playerRank = allPlayers.findIndex(p => p.id === player.id) + 1;
 
   return (
     <div className="kahoot-page">
@@ -588,6 +647,7 @@ function PlayRoute({ navigate }) {
           <div className="kahoot-page">
             <header className="top-bar">
               <h2>Mängija: {player.nickname}</h2>
+              <div>Skoor: {player.score || 0} p</div>
             </header>
             <main className="game-body">
               <div className="question-view">
@@ -620,6 +680,7 @@ function PlayRoute({ navigate }) {
         <div className="kahoot-page">
           <header className="top-bar">
             <h2>Tulemused - {player.nickname}</h2>
+            <div>Skoor: {player.score || 0} p</div>
           </header>
           <main className="game-body">
             <div className="question-view">
@@ -627,11 +688,11 @@ function PlayRoute({ navigate }) {
                 {selectedOption === null ? (
                   <h2>Aeg sai läbi! ⏱️</h2>
                 ) : isCorrectAnswer ? (
-                  <h2>Õige! 🎉</h2>
+                  <h2>Õige! 🎉 +{earnedPoints} p</h2>
                 ) : (
                   <h2>Vale! ❌</h2>
                 )}
-                <p>Õige vastus on märgitud rohelise linnukesega (✔️)</p>
+                {playerRank > 0 && <p style={{ marginTop: '5px' }}>Sinu koht: #{playerRank}</p>}
               </div>
 
               <h1 className="q-title">{currentQuestionData?.text}</h1>
@@ -666,7 +727,8 @@ function PlayRoute({ navigate }) {
         <div className="kahoot-page center-content">
           <div className="status-card">
             <h2>Mäng on lõppenud! 🎉</h2>
-            <p>Vaata lõplikku edetabelit suurelt ekraanilt.</p>
+            <h1 style={{ fontSize: '2.5rem', margin: '15px 0' }}>#{playerRank > 0 ? playerRank : '-'} KOHT</h1>
+            <p style={{ fontSize: '1.2rem' }}>Lõplik skoor: <strong>{player.score || 0} p</strong></p>
           </div>
         </div>
       )}
