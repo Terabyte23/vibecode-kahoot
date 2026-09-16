@@ -90,7 +90,6 @@ function HostRoute({ navigate }) {
     return () => { pb.collection('players').unsubscribe('*'); };
   }, [activeGame, view]);
 
-  // Updated answer filter strictly scoped to the active question
   useEffect(() => {
     if (!activeGame || view !== 'game' || !activeGame.currentQuestion) return;
 
@@ -224,7 +223,6 @@ function HostRoute({ navigate }) {
         }
       }
 
-      // Explicitly clear answers when starting a new question
       if (updateData.status === 'question') {
         setAnswers([]);
       }
@@ -476,7 +474,6 @@ function PlayRoute({ navigate }) {
     if (params.get('code')) setCode(params.get('code'));
   }, []);
 
-  // Fetch active question text and options for the player
   useEffect(() => {
     if (!game?.currentQuestion) return;
     
@@ -486,7 +483,6 @@ function PlayRoute({ navigate }) {
       .catch(console.error);
   }, [game?.currentQuestion]);
 
-  // Realtime game update listener
   useEffect(() => {
     if (!game?.id) return;
 
@@ -580,28 +576,57 @@ function PlayRoute({ navigate }) {
             <p>Oota tulemusi...</p>
           </div>
         ) : (
-          <div className="player-question-container" style={{ width: '100%', maxWidth: '500px' }}>
-            {/* Question Heading */}
-            <h2 className="q-title" style={{ color: 'white', marginBottom: '20px', textAlign: 'center' }}>
+          <div className="player-question-container" style={{ width: '90%', maxWidth: '600px', margin: '0 auto' }}>
+            <h2 className="q-title" style={{ color: 'white', marginBottom: '20px', textAlign: 'center', fontSize: '1.5rem', wordBreak: 'break-word' }}>
               {currentQuestionData?.text || 'Laen küsimust...'}
             </h2>
-
-            {/* Answer Options Grid with Shapes and Text */}
-            <div className="player-grid">
-              {['▲', '◆', '●', '■'].map((shape, idx) => (
-                <button 
-                  key={idx} 
-                  type="button" 
-                  className={`btn-answer opt-${idx}`} 
-                  onClick={() => handleSendAnswer(idx)}
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
-                >
-                  <span className="shape-icon">{shape}</span>
-                  <span className="option-text">
-                    {currentQuestionData?.options?.[idx] || ''}
-                  </span>
-                </button>
-              ))}
+            <div className="player-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', minHeight: '220px' }}>
+              {['▲', '◆', '●', '■'].map((shape, idx) => {
+                const text = currentQuestionData?.options?.[idx] || '';
+                return (
+                  <button 
+                    key={idx} 
+                    type="button" 
+                    className={`btn-answer opt-${idx}`} 
+                    onClick={() => handleSendAnswer(idx)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justify: 'flex-start',
+                      padding: '12px 16px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      minHeight: '90px',
+                      width: '100%',
+                      boxSizing: 'border-box',
+                      overflow: 'hidden'
+                    }}
+                  >
+                    <span className="shape-icon" style={{ fontSize: '1.4rem', flexShrink: 0, marginRight: '10px' }}>
+                      {shape}
+                    </span>
+                    <span 
+                      className="option-text" 
+                      style={{ 
+                        color: 'white',
+                        fontWeight: 'bold',
+                        textAlign: 'left',
+                        fontSize: text.length > 30 ? '0.85rem' : text.length > 15 ? '1rem' : '1.15rem',
+                        lineHeight: '1.2',
+                        wordBreak: 'break-word',
+                        overflowWrap: 'break-word',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 3,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden'
+                      }}
+                    >
+                      {text}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )
